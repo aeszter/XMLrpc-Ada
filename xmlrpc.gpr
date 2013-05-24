@@ -1,0 +1,81 @@
+with "../lib/gnat/aws.gpr";
+
+project Xmlrpc is
+
+   type Target_Type is
+      ("native", "vxworks");
+   type Ssl_Library_Kind is
+      ("relocatable", "static");
+   for Source_Dirs use ("src/**");
+   for Library_Dir use "lib/";
+   for Library_Version use "1";
+   for Library_Src_Dir use "lib/";
+   type Xmlada_Kind_Type is
+      ("static", "relocatable");
+   Library_Type : Xmlada_Kind_Type := external ("LIBRARY_TYPE");
+   SSL_LIBRARY_TYPE : Ssl_Library_Kind := external ("SSL_LIBRARY_TYPE");
+   PLATFORM : Target_Type := external ("PLATFORM");
+
+   case Library_Type is
+
+      when "static" =>
+
+         case SSL_LIBRARY_TYPE is
+
+            when "relocatable" =>
+
+               case PLATFORM is
+
+                  when "native" =>
+                     for Object_Dir use "obj/";
+                     for Main use ("test.adb");
+
+                  when "vxworks" =>
+                     for Object_Dir use "obj/";
+               end case;
+
+            when "static" =>
+               for Object_Dir use "obj/";
+         end case;
+
+      when "relocatable" =>
+
+   end case;
+
+   package Compiler is
+      for Default_Switches ("ada") use ("-g", "-O2", "-gnatwkf", "-gnatybhedciklnoOrsStuxa");
+   end Compiler;
+
+   package Ide is
+      for Vcs_Kind use "Git";
+   end Ide;
+
+   package Builder is
+
+      case SSL_LIBRARY_TYPE is
+
+         when "relocatable" =>
+
+            case PLATFORM is
+
+               when "native" =>
+
+                  case Library_Type is
+
+                     when "relocatable" =>
+
+                     when "static" =>
+                        for Executable ("test.adb") use "test.test";
+                  end case;
+
+               when "vxworks" =>
+
+            end case;
+
+         when "static" =>
+
+      end case;
+   end Builder;
+
+end Xmlrpc;
+
