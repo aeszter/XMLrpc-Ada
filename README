@@ -1,0 +1,14 @@
+According to ESR, "Every good work of software starts by scratching a developer's
+personal itch."
+
+The converse is probably not true, but here goes...
+One day, I needed to integrate Bugzilla into a project of mine.
+Bugzilla does XML-RPC (http://xml-rpc.com) and JSON-RPC, but not SOAP. 
+There does not seem to be an implementation of XML-RPC available in
+Ada, but AWS (http://www.adacore.com/aws) supports SOAP, which can be
+called a successor to XML-RPC. In fact, SOAP is very similar to a
+superset of XML-RPC, so I've decided to enlist the help of AWS to
+implement XML-RPC.
+For now, the client's side is all I care about.
+
+<aeszter@mpibpc.mpg.de>
