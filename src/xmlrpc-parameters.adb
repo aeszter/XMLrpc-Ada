@@ -25,11 +25,9 @@ package body XMLrpc.Parameters is
    end Argument;
 
    function Argument (P : List; N : Positive) return Types.Object'Class is
+      use type Types.Object_Safe_Pointer;
    begin
-      --  Generated stub: replace with real body!
-      pragma Compile_Time_Warning (Standard.True, "Argument unimplemented");
-      raise Program_Error;
-      return Argument (P, N);
+      return -P.V (N);
    end Argument;
 
    --------------------
@@ -38,10 +36,7 @@ package body XMLrpc.Parameters is
 
    function Argument_Count (P : List) return Natural is
    begin
-      --  Generated stub: replace with real body!
-      pragma Compile_Time_Warning (Standard.True, "Argument_Count unimplemented");
-      raise Program_Error;
-      return Argument_Count (P);
+      return P.N;
    end Argument_Count;
 
 end XMLrpc.Parameters;

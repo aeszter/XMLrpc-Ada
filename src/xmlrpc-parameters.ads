@@ -28,6 +28,10 @@ package XMLrpc.Parameters is
    function Argument (P : List; N : Positive) return Types.Object'Class;
    --  Returns Nth parameters in P. Raises Types.Data_Error if not found
 
+   function Exist (P : List; Name : String) return Boolean;
+
+   function Get (P : List; Name : String) return String;
+
    ------------------
    -- Constructors --
    ------------------

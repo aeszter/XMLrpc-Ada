@@ -11,6 +11,8 @@ package XMLrpc.Message is
 
    function XML_Image (M : Object) return Unbounded_String;
 
+   function Wrapper_Name (M : Object'class) return String;
+
    function Parameters (M : Object'class) return XMLrpc.Parameters.List;
 
 private

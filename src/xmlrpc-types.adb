@@ -34,11 +34,9 @@ package body XMLrpc.Types is
    end Finalize;
 
    function Image (O : Object) return String is
+      pragma Unreferenced (O);
    begin
-      --  Generated stub: replace with real body!
-      pragma Compile_Time_Warning (Standard.True, "Image unimplemented");
-      raise Program_Error;
-      return Image (O);
+      return "";
    end Image;
 
    overriding function Image (O : RPC_String) return String is
@@ -80,10 +78,7 @@ package body XMLrpc.Types is
 
    overriding function XML_Image (O : RPC_Null) return String is
    begin
-      --  Generated stub: replace with real body!
-      pragma Compile_Time_Warning (Standard.True, "XML_Image unimplemented");
-      raise Program_Error;
-      return XML_Image (O);
+      return XML_Image (Object (O));
    end XML_Image;
 
    function XML_Image (O : Object) return String is

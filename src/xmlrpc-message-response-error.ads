@@ -11,6 +11,8 @@ package XMLrpc.Message.Response.Error is
       Faultstring : String)
       return Object;
 
+   function Client (Subname : String := "") return Faultcode;
+
 private
 
    type Object is new Message.Response.Object with null record;
