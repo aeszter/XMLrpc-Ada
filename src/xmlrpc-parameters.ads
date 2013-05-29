@@ -31,6 +31,7 @@ package XMLrpc.Parameters is
    function Exist (P : List; Name : String) return Boolean;
 
    function Get (P : List; Name : String) return String;
+   function Get (P : List; Name : String) return Integer;
 
    ------------------
    -- Constructors --

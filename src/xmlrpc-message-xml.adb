@@ -9,7 +9,7 @@ with Unicode.CES.Utf8;
 with DOM.Core.Nodes;
 with Sax.Readers;
 
-with SOAP.XML;
+with XMLrpc.XML;
 
 with XMLrpc.Message.Reader;
 with XMLrpc.Message.Response.Error;
@@ -36,7 +36,7 @@ package body XMLrpc.Message.XML is
    End_Body   : constant String := "</methodCall>";
 
    type Type_State is
-     (Void, T_Undefined,
+     (Void,
       T_Int, T_Boolean, T_String, T_Double,
       T_Time_Instant, T_Base64,
       T_Struct, T_Array);
@@ -67,19 +67,56 @@ package body XMLrpc.Message.XML is
      (N : DOM.Core.Node;
       S : in out State);
 
-   procedure Parse_Wrapper
-     (N : DOM.Core.Node;
-      S : in out State);
+   procedure Parse_Wrapper (N : DOM.Core.Node; S : in out State);
 
    function Parse_Param
-     (N : DOM.Core.Node;
-      S : State) return XMLrpc.Types.Object'Class;
+     (N : DOM.Core.Node) return XMLrpc.Types.Object'Class;
 
    function Parse_Value
-     (N : DOM.Core.Node;
-      S : State) return XMLrpc.Types.Object'Class;
+     (N : DOM.Core.Node) return XMLrpc.Types.Object'Class;
 
-      type Parse_Type is access
+   --  Parse routines for specific types
+
+   function Parse_Any_Type
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class;
+
+   function Parse_Int
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class;
+
+   function Parse_Double
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class;
+
+   function Parse_String
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class;
+
+   function Parse_Boolean
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class;
+
+   function Parse_Base64
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class;
+
+   function Parse_Time_Instant
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class;
+
+   function Parse_Array
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class;
+
+   function Parse_Record
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class;
+
+   procedure Error (Node : DOM.Core.Node; Message : String);
+   pragma No_Return (Error);
+
+   type Parse_Type is access
      function (Name : String;
                N    : DOM.Core.Node) return Types.Object'Class;
 
@@ -91,8 +128,6 @@ package body XMLrpc.Message.XML is
    Handlers : constant array (Type_State) of Type_Handler :=
                 (Void           =>
                    (null, null),
-                 T_Undefined    =>
-                   (Types.XML_Undefined'Access, null),
                  T_Int            =>
                    (Types.XML_Int'Access, Parse_Int'Access),
                  T_Double         =>
@@ -104,13 +139,11 @@ package body XMLrpc.Message.XML is
                  T_Base64         =>
                    (Types.XML_Base64'Access, Parse_Base64'Access),
                  T_Time_Instant   =>
-                   (Types.XML_Time_Instant'Access, Parse_Time_Instant'Access),
+                   (Types.XML_Date_Time'Access, Parse_Time_Instant'Access),
                  T_Struct         =>
-                   (Types.XML_Struct'Access, Parse_Struct'Access),
+                   (Types.XML_Record'Access, Parse_Record'Access),
                  T_Array          =>
                    (Types.XML_Array'Access, Parse_Array'Access));
-
-   procedure Error (Node : DOM.Core.Node; Message : String);
 
    -----------
    -- Error --
@@ -192,7 +225,7 @@ package body XMLrpc.Message.XML is
          return Message.Response.Error.Build
            (Faultcode   =>
               Message.Response.Error.Faultcode
-               (String'(XMLrpc.Parameters.Get (S.Parameters, "faultcode"))),
+               (Integer'(XMLrpc.Parameters.Get (S.Parameters, "faultcode"))),
             Faultstring => XMLrpc.Parameters.Get (S.Parameters, "faultstring"));
       else
          return Message.Response.Object'
@@ -203,25 +236,110 @@ package body XMLrpc.Message.XML is
    exception
       when E : others =>
          return Message.Response.Error.Build
-           (Faultcode   => Message.Response.Error.Client,
+           (Faultcode   => Message.Response.Error.Internal_Error,
             Faultstring => Exceptions.Exception_Message (E));
    end Load_Response;
 
+   function Parse_Any_Type
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class is
+   begin
+      --  "If no type is indicated, the type is string."
+      return Parse_String (Name, N);
+   end Parse_Any_Type;
+
+   function Parse_Array
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class
+   is
+      pragma Unreferenced (Name);
+      use type DOM.Core.Node;
+      use XMLrpc.Types;
+
+      OS    : Types.Object_Set (1 .. Max_Object_Size);
+      K     : Natural := 0;
+
+      Field : DOM.Core.Node;
+
+   begin
+      Field := XMLrpc.XML.First_Child (N);
+
+      while Field /= null loop
+         K := K + 1;
+
+         OS (K) := +Parse_Param (Field);
+         Field := Next_Sibling (Field);
+      end loop;
+
+      return Types.A (OS (1 .. K));
+   end Parse_Array;
+
+   function Parse_Base64
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class
+   is
+      use type DOM.Core.Node;
+
+      Value : DOM.Core.Node;
+   begin
+      Normalize (N);
+      Value := First_Child (N);
+
+      if Value = null then
+         --  No node found, this is an empty Base64 content
+         return Types.B64 ("", Name);
+
+      else
+         return Types.B64 (Node_Value (Value), Name);
+      end if;
+   end Parse_Base64;
+
    procedure Parse_Body (N : DOM.Core.Node; S : in out State) is
    begin
-      Parse_Wrapper (SOAP.XML.First_Child (N), S);
+      Parse_Wrapper (XMLrpc.XML.First_Child (N), S);
    end Parse_Body;
+
+   function Parse_Boolean
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class
+   is
+      Value : constant DOM.Core.Node := First_Child (N);
+   begin
+      if Node_Value (Value) = "1"
+        or else Node_Value (Value) = "true"
+        or else Node_Value (Value) = "TRUE"
+      then
+         return Types.B (True, Name);
+      elsif Node_Value (Value) = "0"
+        or else Node_Value (Value) = "false"
+        or else Node_Value (Value) = "FALSE"
+      then
+         return Types.B (False, Name);
+      else
+         raise Types.Data_Error
+            with "did not understand boolean value """ & Node_Value (Value) & """";
+      end if;
+   end Parse_Boolean;
 
    procedure Parse_Document (N : DOM.Core.Node; S : in out State) is
       NL : constant DOM.Core.Node_List := Child_Nodes (N);
    begin
       if Length (NL) = 1 then
-         Parse_Envelope (SOAP.XML.First_Child (N), S);
+         Parse_Envelope (XMLrpc.XML.First_Child (N), S);
       else
          Error (N, "Document must have a single node, found "
                 & Natural'Image (Length (NL)));
       end if;
    end Parse_Document;
+
+   function Parse_Double
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class
+   is
+      Value : constant DOM.Core.Node := First_Child (N);
+   begin
+      return Types.D (Long_Float'Value (Node_Value (Value)), Name);
+   end Parse_Double;
 
    procedure Parse_Envelope (N : DOM.Core.Node; S : in out State) is
       --  the Envelope is either a methodCall or a methodResponse
@@ -230,14 +348,14 @@ package body XMLrpc.Message.XML is
    begin
       if Length (NL) = 1 then
          --  This must be the body, i.e. a params or a fault
-         Parse_Body (SOAP.XML.First_Child (N), LS);
+         Parse_Body (XMLrpc.XML.First_Child (N), LS);
 
       elsif Length (NL) = 2 then
          --  The first child must the header , i.e. a methodName
-         Parse_Header (SOAP.XML.First_Child (N), LS);
+         Parse_Header (XMLrpc.XML.First_Child (N), LS);
 
          --  The second child must be the body
-         Parse_Body (SOAP.XML.Next_Sibling (First_Child (N)), LS);
+         Parse_Body (XMLrpc.XML.Next_Sibling (First_Child (N)), LS);
       else
          Error (N, "Envelope must have at most two nodes, found "
                 & Natural'Image (Length (NL)));
@@ -255,9 +373,17 @@ package body XMLrpc.Message.XML is
       end if;
    end Parse_Header;
 
+   function Parse_Int
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class
+   is
+      Value : constant DOM.Core.Node := First_Child (N);
+   begin
+      return Types.I (Integer'Value (Node_Value (Value)), Name);
+   end Parse_Int;
+
    function Parse_Param
-     (N : DOM.Core.Node;
-      S : State) return Types.Object'Class
+     (N : DOM.Core.Node) return XMLrpc.Types.Object'Class
    is
       use type DOM.Core.Node;
       use type DOM.Core.Node_Types;
@@ -265,15 +391,74 @@ package body XMLrpc.Message.XML is
 
    begin
       if Ada.Characters.Handling.To_Lower (Name) = "value" then
-         return Parse_Value (SOAP.XML.First_Child (N), S);
+         return Parse_Value (XMLrpc.XML.First_Child (N));
       else
          Error (N, "value node expected, found " & Name);
       end if;
    end Parse_Param;
 
+   function Parse_Record
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class
+   is
+      use type DOM.Core.Node;
+      use type DOM.Core.Node_Types;
+      use XMLrpc.Types;
+
+      OS : Types.Object_Set (1 .. Max_Object_Size);
+      K  : Natural := 0;
+
+      Field : DOM.Core.Node := XMLrpc.XML.Get_Ref (N);
+   begin
+      Field := XMLrpc.XML.First_Child (Field);
+
+      while Field /= null loop
+         K := K + 1;
+         OS (K) := +Parse_Param (Field);
+
+         Field := Next_Sibling (Field);
+      end loop;
+
+      return Types.R (OS (1 .. K), Name);
+   end Parse_Record;
+
+   function Parse_String
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class
+   is
+      use type DOM.Core.Node;
+      use type DOM.Core.Node_Types;
+
+      L : constant DOM.Core.Node_List := Child_Nodes (N);
+      S : Unbounded_String;
+      P : DOM.Core.Node;
+   begin
+      for I in 0 .. Length (L) - 1 loop
+         P := Item (L, I);
+         if P.Node_Type = DOM.Core.Text_Node then
+            Append (S, Node_Value (P));
+         end if;
+      end loop;
+
+      return Types.S (S, Name);
+   end Parse_String;
+
+   ------------------------
+   -- Parse_Time_Instant --
+   ------------------------
+
+   function Parse_Time_Instant
+     (Name : String;
+      N    : DOM.Core.Node) return Types.Object'Class
+   is
+      Value : constant DOM.Core.Node := First_Child (N);
+      TI    : constant String        := Node_Value (Value);
+   begin
+      return Utils.Date_Time (TI, Name);
+   end Parse_Time_Instant;
+
    function Parse_Value
-     (N : DOM.Core.Node;
-      S : State) return Types.Object'Class
+     (N : DOM.Core.Node) return XMLrpc.Types.Object'Class
    is
       use type DOM.Core.Node;
       use type DOM.Core.Node_Types;
@@ -292,14 +477,11 @@ package body XMLrpc.Message.XML is
       Prefix : constant String                  := DOM.Core.Nodes.Prefix (N);
       Name   : constant String                  := Local_Name (N);
       Atts   : constant DOM.Core.Named_Node_Map := Attributes (N);
-      LS     : State := S;
 
    begin
-      S.Wrapper_Name := To_Unbounded_String (Name);
-
       for K in 0 .. Length (NL) - 1 loop
          if Item (NL, K).Node_Type /= DOM.Core.Text_Node then
-            S.Parameters := S.Parameters & Parse_Param (Item (NL, K), LS);
+            S.Parameters := S.Parameters & Parse_Param (Item (NL, K));
          end if;
       end loop;
    end Parse_Wrapper;
@@ -311,13 +493,14 @@ package body XMLrpc.Message.XML is
       for K in Handlers'Range loop
          if Handlers (K).Name /= null
            and then
-             Handlers (K).Name = Type_Name
+             Handlers (K).Name.all = Type_Name
          then
             return K;
          end if;
       end loop;
 
-      return T_Undefined;
+      raise XMLrpc_Error
+        with "could not find handler for type " & Type_Name;
    end To_Type;
 
 end XMLrpc.Message.XML;

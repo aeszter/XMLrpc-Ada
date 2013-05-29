@@ -15,6 +15,14 @@ package XMLrpc.Message is
 
    function Parameters (M : Object'class) return XMLrpc.Parameters.List;
 
+   procedure Set_Wrapper_Name
+     (M     : in out Object'Class;
+      Name  : String);
+
+   procedure Set_Parameters
+     (M     : in out Object'Class;
+      P_Set : XMLrpc.Parameters.List);
+
 private
    --   type Object is new SOAP.Message.Object with null record;
    type Object is tagged record

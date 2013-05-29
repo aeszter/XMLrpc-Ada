@@ -1,3 +1,4 @@
+with XMLrpc.Types;
 package body XMLrpc.Message.Response.Error is
 
    -----------
@@ -9,11 +10,27 @@ package body XMLrpc.Message.Response.Error is
       Faultstring : String)
       return Object
    is
+      use XMLrpc.Types;
+      use type XMLrpc.Parameters.List;
+
+      O : Object;
+      P : XMLrpc.Parameters.List;
    begin
-      --  Generated stub: replace with real body!
-      pragma Compile_Time_Warning (Standard.True, "Build unimplemented");
-      raise Program_Error;
-      return Build (Faultcode, Faultstring);
+      --  Set Wrapper Name
+
+      Set_Wrapper_Name (O, "fault");
+
+      --  Set Faultcode and Faultstring
+
+      P := P
+        & S (Error.Faultcode'Image (Faultcode), "faultcode")
+        & S (Faultstring, "faultstring");
+
+      --  Set parameters for this error object
+
+      Set_Parameters (O, P);
+
+      return O;
    end Build;
 
 end XMLrpc.Message.Response.Error;

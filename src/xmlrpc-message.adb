@@ -7,6 +7,24 @@ package body XMLrpc.Message is
       return M.P;
    end Parameters;
 
+   procedure Set_Parameters
+     (M     : in out Object'Class;
+      P_Set : XMLrpc.Parameters.List) is
+   begin
+      M.P := P_Set;
+   end Set_Parameters;
+
+   ----------------------
+   -- Set_Wrapper_Name --
+   ----------------------
+
+   procedure Set_Wrapper_Name
+     (M    : in out Object'Class;
+      Name : String) is
+   begin
+      M.Wrapper_Name := To_Unbounded_String (Name);
+   end Set_Wrapper_Name;
+
    function Wrapper_Name (M : Object'class) return String is
    begin
       return To_String (M.Wrapper_Name);

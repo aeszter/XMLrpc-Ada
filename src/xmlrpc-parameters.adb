@@ -39,4 +39,26 @@ package body XMLrpc.Parameters is
       return P.N;
    end Argument_Count;
 
+   function Exist (P : List; Name : String) return Boolean is
+      use type Types.Object_Safe_Pointer;
+   begin
+      for K in 1 .. P.N loop
+         if Types.Name (-P.V (K)) = Name then
+            return True;
+         end if;
+      end loop;
+
+      return False;
+   end Exist;
+
+   function Get (P : List; Name : String) return String is
+   begin
+      return Types.Get (Argument (P, Name));
+   end Get;
+
+   function Get (P : List; Name : String) return Integer is
+   begin
+      return Types.Get (Argument (P, Name));
+   end Get;
+
 end XMLrpc.Parameters;

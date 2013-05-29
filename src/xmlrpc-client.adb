@@ -66,9 +66,7 @@ package body XMLrpc.Client is
 
       else
          return Message.Response.Error.Build
-           (Faultcode   => Message.Response.Error.Faultcode
-              (AWS.Messages.Status_Code'Image
-                 (AWS.Response.Status_Code (Response))),
+           (Faultcode   => Message.Response.Error.HTTP_Error,
             Faultstring => AWS.Response.Message_Body (Response));
       end if;
    end Call;

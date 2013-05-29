@@ -6,8 +6,9 @@ with Ada.Calendar;
 
 package XMLrpc.Types is
 
-   type Object is abstract tagged private;
+   Data_Error : exception;
 
+   type Object is abstract tagged private;
    type Object_Access is access all Object'Class;
    type Object_Safe_Pointer is tagged private;
    type Object_Set is array (Positive range <>) of Object_Safe_Pointer;
@@ -32,7 +33,7 @@ package XMLrpc.Types is
    -- Array --
    -----------
 
-   XML_Array     : constant String := "array";
+   XML_Array     : aliased constant String := "array";
 
    type RPC_Array is new Composite with private;
 
@@ -40,10 +41,7 @@ package XMLrpc.Types is
    overriding function XML_Image (O : RPC_Array) return String;
    overriding function XML_Type  (O : RPC_Array) return String;
 
-   function A
-     (V         : Object_Set;
-      Name      : String;
-      Type_Name : String := "") return RPC_Array;
+   function A (V : Object_Set) return RPC_Array;
 
    function Size (O : RPC_Array) return Natural;
 
@@ -134,6 +132,7 @@ pragma Compile_Time_Warning (Standard.True, "Null is not part of XML-RPC.");
    -- Record --
    ------------
 
+   XML_Record : aliased constant String := "struct";
    type RPC_Record is new Composite with private;
 
    overriding function Image     (O : RPC_Record) return String;
@@ -193,6 +192,9 @@ pragma Compile_Time_Warning (Standard.True, "Null is not part of XML-RPC.");
 --   function "+" (O : SOAP.Types.Object'Class) return SOAP.Types.Object_Safe_Pointer
 --                 renames SOAP.Types."+";
 
+   function Get (O : Object'Class) return String;
+   function Get (O : Object'Class) return Integer;
+
 private
    type Object is abstract new Ada.Finalization.Controlled with
       record
@@ -208,6 +210,9 @@ private
 
    overriding procedure Finalize (O : in out Object_Safe_Pointer);
    pragma Inline (Finalize);
+
+   procedure Get_Error (Expected : String; O : Object'Class);
+   pragma No_Return (Get_Error);
 
    type Scalar is abstract new Object with null record;
 
@@ -257,12 +262,7 @@ private
       V : Unbounded_String;
    end record;
 
-   type RPC_Array is new Composite with record
-      Type_Name : Unbounded_String;
-   end record;
-
-   type RPC_Record is new Composite with record
-      Type_Name : Unbounded_String;
-   end record;
+   type RPC_Array is new Composite with null record;
+   type RPC_Record is new Composite with null record;
 
 end XMLrpc.Types;
