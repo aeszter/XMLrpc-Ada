@@ -503,8 +503,16 @@ package body XMLrpc.Types is
       XML_Indent.Set_Value (Indent + 1);
 
       for K in O.O'Range loop
+         Append (Result, "<member>" & New_Line);
+         XML_Indent.Set_Value (Indent + 2);
+         Append (Result, "<name>");
+         Append (Result, Name (O.O (K).O.all));
+         Append (Result, "</name>" & New_Line);
+         Append (Result, "<value>");
          Append (Result, XML_Image (O.O (K).O.all));
-         Append (Result, New_Line);
+         Append (Result, "</value>" & New_Line);
+         XML_Indent.Set_Value (Indent + 1);
+         Append (Result, "</member>" & New_Line);
       end loop;
 
       XML_Indent.Set_Value (Indent);
