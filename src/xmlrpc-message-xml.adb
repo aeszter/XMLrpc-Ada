@@ -533,6 +533,9 @@ package body XMLrpc.Message.XML is
      (Type_Name : String) return Type_State
    is
    begin
+      if Type_Name = "int" then
+         return To_Type ("i4");
+      end if;
       for K in Handlers'Range loop
          if Handlers (K).Name /= null
            and then
