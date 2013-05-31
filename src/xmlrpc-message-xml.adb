@@ -17,7 +17,6 @@ with XMLrpc.Message.Response.Error;
 --  with XMLrpc.Types.Untyped;
 with XMLrpc.Utils;
 with XMLrpc.Types;
-with Ada.Text_IO;
 
 package body XMLrpc.Message.XML is
 
@@ -302,7 +301,6 @@ package body XMLrpc.Message.XML is
       use type XMLrpc.Parameters.List;
 
    begin
-      Ada.Text_IO.Put_Line ("Parse_Body");
       if Name = "params" then
          Parse_Wrapper (XMLrpc.XML.First_Child (N), S);
       elsif Name = "fault" then
@@ -337,7 +335,6 @@ package body XMLrpc.Message.XML is
    procedure Parse_Document (N : DOM.Core.Node; S : in out State) is
       NL : constant DOM.Core.Node_List := Child_Nodes (N);
    begin
-      Ada.Text_IO.Put_Line ("Parse_Document");
       if Length (NL) = 1 then
          Parse_Envelope (XMLrpc.XML.First_Child (N), S);
       else
@@ -361,7 +358,6 @@ package body XMLrpc.Message.XML is
       LS : State := S;
       Name : constant String := Ada.Characters.Handling.To_Lower (Local_Name (N));
    begin
-      Ada.Text_IO.Put_Line ("Parse_Envelope");
       if Name /= "methodcall" and then
         Name /= "methodresponse" then
          Error (N, "Envelope expected");
@@ -394,7 +390,6 @@ package body XMLrpc.Message.XML is
       pragma Unreferenced (S);
       Name : constant String := Local_Name (N);
    begin
-      Ada.Text_IO.Put_Line ("Parse_Header");
       if Ada.Characters.Handling.To_Lower (Name) /= "methodname" then
          Error (N, "methodName node expected, found " & Name);
       end if;
@@ -406,7 +401,6 @@ package body XMLrpc.Message.XML is
    is
       Value : constant DOM.Core.Node := First_Child (N);
    begin
-      Ada.Text_IO.Put_Line ("Parse_Int");
       return Types.I (Integer'Value (Node_Value (Value)), Name);
    end Parse_Int;
 
@@ -428,7 +422,6 @@ package body XMLrpc.Message.XML is
       Name   : constant String := Local_Name (N);
 
    begin
-      Ada.Text_IO.Put_Line ("Parse_Param");
       if Ada.Characters.Handling.To_Lower (Name) = "value" then
          return Parse_Value (N, Name);
       elsif Ada.Characters.Handling.To_Lower (Name) = "member" then
@@ -460,7 +453,6 @@ package body XMLrpc.Message.XML is
 
       Field : DOM.Core.Node := XMLrpc.XML.Get_Ref (N);
    begin
-      Ada.Text_IO.Put_Line ("Parse_Record");
       Field := XMLrpc.XML.First_Child (Field);
 
       while Field /= null loop
@@ -484,7 +476,6 @@ package body XMLrpc.Message.XML is
       S : Unbounded_String;
       P : DOM.Core.Node;
    begin
-      Ada.Text_IO.Put_Line ("Parse_String");
       for I in 0 .. Length (L) - 1 loop
          P := Item (L, I);
          if P.Node_Type = DOM.Core.Text_Node then
@@ -518,7 +509,6 @@ package body XMLrpc.Message.XML is
                  To_Type (Local_Name (First_Child (N)));
 
    begin
-      Ada.Text_IO.Put_Line ("Parse_Value");
       return Handlers (S_Type).Handler (Name, First_Child (N));
    end Parse_Value;
 
@@ -532,7 +522,6 @@ package body XMLrpc.Message.XML is
       Atts   : constant DOM.Core.Named_Node_Map := Attributes (N);
 
    begin
-      Ada.Text_IO.Put_Line ("Parse_Wrapper");
       for K in 0 .. Length (NL) - 1 loop
          if Item (NL, K).Node_Type /= DOM.Core.Text_Node then
             S.Parameters := S.Parameters & Parse_Param (Item (NL, K));
