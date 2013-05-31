@@ -243,7 +243,7 @@ package body XMLrpc.Types is
       Append (Result, '(');
 
       for K in O.O'Range loop
-         Append (Result, Name (O));
+         Append (Result, Name (O.O (K).O.all));
          Append (Result, " => ");
          Append (Result, Image (O.O (K).O.all));
 

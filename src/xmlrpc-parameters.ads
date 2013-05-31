@@ -17,6 +17,7 @@ package XMLrpc.Parameters is
    --  implementation.
 
    type List is private;
+   No_Parameter : constant List;
 
    function Argument_Count (P : List) return Natural;
    --  Returns the number of parameters in P
@@ -45,4 +46,6 @@ private
       V : Types.Object_Set (1 .. Max_Parameters);
       N : Natural := 0;
    end record;
+
+   No_Parameter : constant List := (N => 0, V => (others => <>));
 end XMLrpc.Parameters;
