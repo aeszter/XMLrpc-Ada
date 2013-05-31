@@ -44,16 +44,20 @@ package body XMLrpc.Message is
       Append (Message_Header, "</methodName>" & New_Line);
 
       --  Procedure's parameters
+      Append (Message_Body, "<params>" & New_Line);
 
       declare
          P : constant XMLrpc.Parameters.List := Parameters (M);
       begin
          for K in 1 .. XMLrpc.Parameters.Argument_Count (P) loop
+            Append (Message_Body, "<param>");
             Append
               (Message_Body,
                XMLrpc.Types.XML_Image (XMLrpc.Parameters.Argument (P, K)) & New_Line);
+            Append (Message_Body, "</param>");
          end loop;
       end;
+      Append (Message_Body, "</params>" & New_Line);
 
       --  Close payload objects
       null;
